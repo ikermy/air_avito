@@ -1,0 +1,156 @@
+openapi: 3.0.3
+info:
+  title: air_avito HTTP API
+  description: HTTP API для управления интеграцией с Avito.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: Avito
+    description: Интеграция с Avito
+  - name: Monitoring
+    description: Мониторинг сервиса
+paths:
+  /metrics:
+    get:
+      tags: [Monitoring]
+      summary: Получить Prometheus-метрики
+      operationId: getMetrics
+      responses:
+        '200':
+          description: Метрики Prometheus
+          content:
+            text/plain: { schema: { type: string } }
+  /v1/avito/status:
+    get:
+      tags: [Avito]
+      summary: Получить статус Avito
+      operationId: getAvitoStatus
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      responses: { '200': { description: Статус интеграции, content: { application/json: { schema: { type: object } } } } }
+  /v1/avito/auth/url:
+    post:
+      tags: [Avito]
+      summary: Получить URL OAuth-авторизации Avito
+      operationId: getAvitoAuthURL
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/AuthURLRequest' } }
+      responses:
+        '200':
+          description: URL авторизации
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/AuthURLResponse' } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /v1/avito/enable:
+    get:
+      tags: [Avito]
+      summary: Запустить бота Avito
+      operationId: enableAvito
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      responses: { '200': { $ref: '#/components/responses/StatusOk' } }
+  /v1/avito/disable:
+    get:
+      tags: [Avito]
+      summary: Остановить бота Avito
+      operationId: disableAvito
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      responses: { '200': { $ref: '#/components/responses/StatusOk' } }
+  /v1/avito/chats:
+    get:
+      tags: [Avito]
+      summary: Получить список чатов
+      operationId: getAvitoChats
+      parameters:
+        - { $ref: '#/components/parameters/UserId' }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 10 } }
+        - { name: offset, in: query, schema: { type: integer, minimum: 0, maximum: 1000, default: 0 } }
+        - { name: unread_only, in: query, schema: { type: boolean, default: false } }
+      responses:
+        '200': { description: Список чатов, content: { application/json: { schema: { type: object } } } }
+  /v1/avito/subscriptions:
+    get:
+      tags: [Avito]
+      summary: Получить подписки Avito
+      operationId: getAvitoSubscriptions
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      responses: { '200': { description: Список подписок, content: { application/json: { schema: { type: object } } } } }
+  /v1/avito/subscribe:
+    post:
+      tags: [Avito]
+      summary: Подписаться на webhook Avito
+      operationId: subscribeAvitoWebhook
+      parameters: [{ $ref: '#/components/parameters/UserId' }]
+      responses: { '200': { $ref: '#/components/responses/StatusOk' } }
+  /v1/avito/unsubscribe:
+    post:
+      tags: [Avito]
+      summary: Отписаться от webhook Avito
+      operationId: unsubscribeAvitoWebhook
+      parameters:
+        - { $ref: '#/components/parameters/UserId' }
+        - { name: url, in: query, required: true, schema: { type: string, format: uri } }
+      responses: { '200': { $ref: '#/components/responses/StatusOk' }, '400': { $ref: '#/components/responses/BadRequest' } }
+  /open/avito/available:
+    get:
+      tags: [Avito]
+      summary: Проверить доступность сервиса
+      operationId: avitoAvailable
+      responses: { '200': { description: Сервис доступен } }
+  /open/avito/auth/callback:
+    get:
+      tags: [Avito]
+      summary: OAuth callback Avito
+      operationId: avitoAuthCallback
+      parameters:
+        - { name: code, in: query, schema: { type: string } }
+        - { name: state, in: query, schema: { type: string } }
+        - { name: error, in: query, schema: { type: string } }
+      responses: { '302': { description: Редирект после OAuth } }
+  /open/avito/webhook:
+    post:
+      tags: [Avito]
+      summary: Webhook Avito
+      operationId: avitoWebhook
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/WebhookPayload' } } }
+      responses: { '200': { description: Webhook обработан } }
+components:
+  parameters:
+    UserId:
+      name: uid
+      in: query
+      required: true
+      schema: { type: integer, format: int32, minimum: 0 }
+  schemas:
+    AuthURLRequest:
+      type: object
+      required: [url, client_id, client_secret]
+      properties:
+        url: { type: string }
+        client_id: { type: string }
+        client_secret: { type: string }
+    AuthURLResponse:
+      type: object
+      properties: { auth_url: { type: string, format: uri } }
+    WebhookPayload:
+      type: object
+      properties:
+        type: { type: string }
+        payload: { type: object }
+    StatusResponse:
+      type: object
+      properties: { status: { type: string } }
+    ErrorResponse:
+      type: object
+      properties: { error: { type: string } }
+  responses:
+    StatusOk:
+      description: Операция выполнена
+      content: { application/json: { schema: { $ref: '#/components/schemas/StatusResponse' } } }
+    BadRequest:
+      description: Некорректный запрос
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
