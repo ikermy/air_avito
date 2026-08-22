@@ -5,7 +5,7 @@ go 1.25.8
 require (
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/gofiber/fiber/v3 v3.4.0
-	github.com/ikermy/air_common v1.50.90
+	github.com/ikermy/air_common v1.50.93
 	github.com/ikermy/air_logger/v2 v2.1.3
 	github.com/prometheus/client_golang v1.24.1
 	github.com/redis/go-redis/v9 v9.22.0
