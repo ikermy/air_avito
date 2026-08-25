@@ -5,7 +5,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/ikermy/air_common/pkg/comdb"
+	"github.com/ikermy/air-common/pkg/comdb"
 )
 
 // Interior описывает внутренние методы доступа к данным приложения.

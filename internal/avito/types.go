@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ikermy/air_common/pkg/crm"
-	"github.com/ikermy/air_common/pkg/endpoint"
-	"github.com/ikermy/air_common/pkg/model"
+	"github.com/ikermy/air-common/pkg/crm"
+	"github.com/ikermy/air-common/pkg/endpoint"
+	"github.com/ikermy/air-common/pkg/model"
 )
 
 // DB Интерфейсы для зависимостей

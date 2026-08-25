@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/ikermy/air_common/pkg/com"
-	"github.com/ikermy/air_logger/v2/pkg/logger"
+	"github.com/ikermy/air-common/pkg/com"
+	"github.com/ikermy/air-logger/v2/pkg/logger"
 )
 
 // extractUID middleware извлекает userID из query параметра uid и сохраняет в Locals

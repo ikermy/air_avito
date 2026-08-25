@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ikermy/air_common/pkg/comdb"
-	"github.com/ikermy/air_common/pkg/model"
-	"github.com/ikermy/air_logger/v2/pkg/logger"
+	"github.com/ikermy/air-common/pkg/comdom"
+	"github.com/ikermy/air-common/pkg/model"
+	"github.com/ikermy/air-logger/v2/pkg/logger"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -470,7 +470,7 @@ func (c *Client) handleIncomingMessage(payload domain.WebhookPayload) error {
 // initializeResponderSession инициализирует новую сессию для респондента
 func (c *Client) initializeResponderSession(respID uint64, respName string, chatID string) error {
 	// Получаем ID диалога (Type = 3 для Avito согласно chat_type)
-	dialogId, err := c.db.GetOrSetTreadAndResponder(c.userID, respID, respName, comdb.Avito)
+	dialogId, err := c.db.GetOrSetTreadAndResponder(c.userID, respID, respName, comdom.Avito)
 	if err != nil {
 		return fmt.Errorf("ошибка при создании диалога: %w", err)
 	}

@@ -90,7 +90,7 @@ The complete API description is available in [`doc/openapi.yaml`](doc/openapi.ya
 - Prometheus — metrics;
 - Docker / Docker Compose — running and deployment;
 - Loki — container log collection;
-- OpenAI, Google, and Mistral — AI model routers through `air_common`.
+- OpenAI, Google, and Mistral — AI model routers through `air-common`.
 
 ## Running
 
@@ -131,11 +131,11 @@ GLOB_USER_MODEL_TTL=1440
 
 ## Related Services
 
-- [air_common](https://github.com/ikermy/air_common) — common library for AI microservices;
+- [air-common](https://github.com/ikermy/air-common) — common library for AI microservices;
 - [air_orchestrator](https://github.com/ikermy/air_orchestrator) — main orchestration service;
 - [air_operator](https://github.com/ikermy/air_operator) — service for forwarding user responses to operators, supporting all bot types;
 - [marusia_crm](https://github.com/ikermy/marusia_crm) — service for integrating with external CRM systems;
-- [air_logger](https://github.com/ikermy/air_logger) — event logging service with multi-user support and Loki collector integration.
+- [air-logger](https://github.com/ikermy/air-logger) — event logging service with multi-user support and Loki collector integration.
 
 ## License
 

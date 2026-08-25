@@ -90,7 +90,7 @@ POST /open/avito/webhook
 - Prometheus — метрики;
 - Docker / Docker Compose — запуск и развёртывание;
 - Loki — сбор контейнерных логов;
-- OpenAI, Google и Mistral — маршруты AI-моделей через `air_common`.
+- OpenAI, Google и Mistral — маршруты AI-моделей через `air-common`.
 
 ## Запуск
 
@@ -131,11 +131,11 @@ GLOB_USER_MODEL_TTL=1440
 
 ## Связанные сервисы
 
-- [air_common](https://github.com/ikermy/air_common) — Общая библиотека для AI‑микросервисов
+- [air-common](https://github.com/ikermy/air-common) — Общая библиотека для AI‑микросервисов
 - [air_orchestrator](https://github.com/ikermy/air_orchestrator) — Главный сервис оркестратор
 - [air_operator](https://github.com/ikermy/air_operator) — Сервис переадресации ответов на операторов от пользователей, поддерживает все типы ботов
 - [marusia_crm](https://github.com/ikermy/marusia_crm) — Сервис интеграции с внешними CRM системами
-- [air_logger](https://github.com/ikermy/air_logger) — Вспомогательный сервис логирования событий с поддержкой многопользовательского режима и поддержкой сборщика логов loki
+- [air-logger](https://github.com/ikermy/air-logger) — Вспомогательный сервис логирования событий с поддержкой многопользовательского режима и поддержкой сборщика логов loki
 
 ## Лицензия
 

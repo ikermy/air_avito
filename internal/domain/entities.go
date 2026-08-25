@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/ikermy/air_common/pkg/model/commdom"
+	"github.com/ikermy/air-common/pkg/comdom"
 )
 
 // Token представляет OAuth токены Avito, хранимые в channels.Avito.
@@ -34,7 +34,7 @@ type UserDetails struct {
 	AvitoEnabled bool
 	AssistName   string
 	AssistantID  string
-	Provider     commdom.ProviderType
+	Provider     comdom.ProviderType
 	MetaAction   string
 	Triggers     []string
 	Espero       uint8
