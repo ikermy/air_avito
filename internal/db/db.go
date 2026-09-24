@@ -5,49 +5,13 @@ import (
 	"air_avito/internal/repository"
 	"air_avito/internal/repository/mysql"
 	"context"
+	"sync"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/ikermy/air-common/pkg/comdb"
-	"github.com/ikermy/air-common/pkg/comdom"
 	"github.com/ikermy/air-logger/v2/pkg/logger"
 )
-
-// UserDetails представляет информацию о пользователе, включая настройки телеграм-бота
-type UserDetails struct {
-	UserId       int64               // Идентификатор пользователя
-	Avito        string              // JSON с OAuth токенами Avito
-	AvitoEnabled bool                // Флаг включения Avito интеграции
-	AssistName   string              // Имя ассистента
-	AssistantId  string              // Идентификатор ассистента
-	Provider     comdom.ProviderType // Тип провайдера: 1=OpenAI, 2=Mistral
-	MetaAction   string              // Поле MetaAction из модели ассистента
-	Triggers     []string            // Список триггеров из модели ассистента
-	Espero       uint8               // Значение Espero
-	AskLimit     uint32              // Лимит запросов
-	Ignore       bool                // Игнорировать сообщения до ответа ассистента
-	Events       Notifications       // При каких событиях присылать уведомления
-}
-
-// AvitoToken представляет OAuth токены для Avito (хранится в JSON в channels.Avito)
-type AvitoToken struct {
-	AvitoUserID       string    `json:"avito_user_id"` // ID аккаунта Avito пользователя (например: "430008552")
-	AccessToken       string    `json:"access_token"`
-	RefreshToken      string    `json:"refresh_token"`
-	TokenType         string    `json:"token_type"`
-	Expiry            time.Time `json:"expiry"`
-	Scopes            []string  `json:"scopes"`
-	ClientID          string    `json:"client_id"`           // Персональный Avito Client ID пользователя
-	ClientSecret      string    `json:"client_secret"`       // Персональный Avito Client Secret пользователя
-	RedirectUrlPrefix string    `json:"redirect_url_prefix"` // Персональный URL префикс для callback/webhook (например: "strapless-alanna-quietly.ngrok-free.dev")
-}
-
-// Notifications события уведомлений
-type Notifications struct {
-	Start  bool
-	End    bool
-	Target bool
-}
 
 // NullBytes Промежуточный тип для загрузки массива байт из базы
 type NullBytes struct {
@@ -58,6 +22,10 @@ type NullBytes struct {
 type DB struct {
 	*comdb.DB
 	repo repository.Repository
+
+	done   sync.Once     // На всякий случай однократное закрытие канала
+	DoneCh chan struct{} // Канал уведомления о завершении операций пользователями ДБ
+	Exit   chan struct{} // Канал завершения работы приложения
 }
 
 func (d *DB) GetAvitoToken(ctx context.Context, userID uint32, mk [32]byte) (*domain.Token, error) {
@@ -91,8 +59,10 @@ func New(parent context.Context) (*DB, error) {
 		return nil, err
 	}
 	return &DB{
-		DB:   base,
-		repo: repo,
+		DB:     base,
+		repo:   repo,
+		DoneCh: make(chan struct{}),
+		Exit:   make(chan struct{}),
 	}, nil
 }
 
@@ -103,13 +73,23 @@ func (d *DB) HandlerClose() {
 		logger.Info("DB: контекст отменен, ожидаю завершения всех операций...")
 
 		// Ожидаем сигнал о завершении от компонентов работающих с ДБ
-		<-domain.UsersDB
+		<-d.DoneCh
 		logger.Info("DB: все модули работающие с БД завершили работу, продолжаю остановку...")
 
 		if err := d.Close(); err != nil {
 			logger.Error("DB: ошибка при закрытии: %v", err)
 		}
 
-		close(domain.Exit)
+		close(d.Exit)
 	}()
+}
+
+func (d *DB) CloseDoneCh() {
+	d.done.Do(func() {
+		close(d.DoneCh)
+	})
+}
+
+func (d *DB) GetExitCh() <-chan struct{} {
+	return d.Exit
 }

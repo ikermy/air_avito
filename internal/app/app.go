@@ -25,6 +25,8 @@ import (
 
 type DB interface {
 	HandlerClose()
+	CloseDoneCh()
+	GetExitCh() <-chan struct{}
 }
 
 type Mod interface {
@@ -33,7 +35,7 @@ type Mod interface {
 }
 
 type Start interface {
-	StarterListener(start model.StartCh, errCh chan<- error)
+	StartSession(start *model.StartCh) <-chan error
 	Shutdown(shutCh chan<- com.LogMsg)
 }
 
@@ -56,6 +58,8 @@ type App struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
+	ExitCh <-chan struct{}
+
 	DB    DB
 	Start Start
 	Mod   Mod
@@ -64,7 +68,7 @@ type App struct {
 	Avito Avito
 }
 
-func New(parent context.Context) *App {
+func New(parent context.Context, redisCfg domain.Redis) *App {
 	// Локальный дочерний контекст для уровня app
 	ctx, cancel := context.WithCancel(parent)
 	metrics.Register()
@@ -95,11 +99,11 @@ func New(parent context.Context) *App {
 	})
 
 	var redisClient redis.UniversalClient
-	if domain.RedisAddr != "" {
+	if redisCfg.RedisAddr != "" {
 		redisClient = redis.NewClient(&redis.Options{
-			Addr:     domain.RedisAddr,
-			Password: domain.RedisPassword,
-			DB:       domain.RedisDB,
+			Addr:     redisCfg.RedisAddr,
+			Password: redisCfg.RedisPassword,
+			DB:       redisCfg.RedisDB,
 		})
 
 		if err := redisClient.Ping(ctx).Err(); err != nil {
@@ -112,7 +116,8 @@ func New(parent context.Context) *App {
 	}
 
 	e := endpoint.New(ctx, d)
-	cr := crm.New(ctx, crm.WithAltContactChannel(crm.ChannelAvito)) // Инициализируем CRM с альтернативным каналом контакта Avito
+	// Инициализируем CRM с альтернативным каналом контакта Avito
+	cr := crm.New(ctx, crm.WithAltContactChannel(crm.ChannelAvito))
 	a := avito.New(ctx, d, m, e, cr, rpcClient, redisClient)
 	o := operator.New(ctx)
 	s := startpoint.New(ctx, m, e, a, o)
@@ -122,6 +127,8 @@ func New(parent context.Context) *App {
 	return &App{
 		ctx:    ctx,
 		cancel: cancel,
+
+		ExitCh: d.GetExitCh(),
 
 		// Инициализация компонентов приложения
 		DB:    d,
@@ -173,7 +180,7 @@ func (a *App) Run() {
 		go func() {
 			ticker := time.NewTicker(5 * time.Second)
 			<-ticker.C
-			close(domain.UsersDB)
+			a.DB.CloseDoneCh() // Закрываем канал DoneCh принудительно, больше никто не работает с БД
 		}()
 
 		logger.Info("App: получен сигнал завершения, начинаю shutdown")
@@ -190,29 +197,22 @@ func (a *App) Run() {
 		// ждём всех producers и закрываем канал
 		bus.WaitAndClose()
 		// Отправляем сигнал о завершении работы с БД
-		close(domain.UsersDB)
+		a.DB.CloseDoneCh()
 	}()
 }
 
 func (a *App) Starter() {
-	// Создаем канал для ошибок
-	errCh := make(chan error, 10)
-
-	// Обработчик ошибок в отдельной горутине
-	go func() {
-		for err := range errCh {
-			if err != nil {
-				logger.Error("Ошибка в Avito StarterListener: %v", err)
-			}
-		}
-		close(errCh)
-	}()
-
 	// Простой цикл чтения из канала Avito
 	for start := range avito.StartCh {
 		// Запускаю слушателя с пользовательскими данными
 		go func(startData model.StartCh) {
-			a.Start.StarterListener(startData, errCh)
+			// ВАЖНО: указатель на копию — StartSession заполняет startData.Realtime
+			errCh := a.Start.StartSession(&startData)
+			for err := range errCh {
+				if err != nil {
+					logger.Error("Ошибка в Avito StartSession: %v", err)
+				}
+			}
 		}(start)
 	}
 
