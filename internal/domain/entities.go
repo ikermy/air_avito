@@ -165,3 +165,10 @@ type Subscription struct {
 type UnsubscribeRequest struct {
 	URL string `json:"url"`
 }
+
+// Redis — параметры подключения (заполняются в main.go из env).
+type Redis struct {
+	RedisAddr     string // REDIS_ADDR (default: "" — Redis отключён)
+	RedisPassword string // REDIS_PASSWORD
+	RedisDB       int    // REDIS_DB (default: 0)
+}

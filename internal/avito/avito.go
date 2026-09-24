@@ -500,11 +500,12 @@ func (c *Client) initializeResponderSession(respID uint64, respName string, chat
 
 	// Отправляем данные в канал запуска
 	startCh := model.StartCh{
-		Ctx:     c.ctx,
-		Model:   usrMod,
-		Chanel:  usrCh,
-		TreadId: dialogId,
-		RespId:  respID,
+		Ctx:      c.ctx,
+		ChName:   comdom.Avito,
+		Model:    usrMod,
+		Channel:  usrCh,
+		ThreadId: dialogId,
+		RespId:   respID,
 	}
 
 	select {
