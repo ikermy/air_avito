@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/ikermy/air-common/pkg/com"
+	"github.com/ikermy/air-common/v2/pkg/com"
 	"github.com/ikermy/air-logger/v2/pkg/logger"
 )
 
@@ -21,7 +21,7 @@ func (u *User) extractUID(c fiber.Ctx) error {
 		})
 	}
 
-	// Парсим uid в uint32
+	// Парсим uid в uint64
 	uid, err := strconv.ParseUint(uidStr, 10, 32)
 	if err != nil {
 		logger.Error("Некорректный формат uid: %v", err)
@@ -30,7 +30,7 @@ func (u *User) extractUID(c fiber.Ctx) error {
 		})
 	}
 
-	userId := uint32(uid)
+	userId := uint64(uid)
 
 	// Сохраняем userId в контексте для использования в handlers
 	c.Locals("userId", userId)
@@ -39,7 +39,7 @@ func (u *User) extractUID(c fiber.Ctx) error {
 }
 
 // userMasterKey Получает MasterKey пользователя от Landing
-func (u *User) userMasterKey(userID uint32) [32]byte {
+func (u *User) userMasterKey(userID uint64) [32]byte {
 	var (
 		userMasterKey [32]byte
 		err           error

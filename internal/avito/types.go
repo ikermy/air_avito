@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ikermy/air-common/pkg/crm"
-	"github.com/ikermy/air-common/pkg/endpoint"
-	"github.com/ikermy/air-common/pkg/model"
+	"github.com/ikermy/air-common/v2/pkg/crm"
+	"github.com/ikermy/air-common/v2/pkg/endpoint"
+	"github.com/ikermy/air-common/v2/pkg/model"
 )
 
 // DB Интерфейсы для зависимостей
@@ -25,16 +25,16 @@ type CRM = crm.Inter
 
 // Operator представляет интерфейс для работы с оператором
 type Operator interface {
-	AskOperator(ctx context.Context, userID uint32, dialogID uint64, question model.Message) (model.Message, error)
-	SendToOperator(ctx context.Context, userID uint32, dialogID uint64, question model.Message) error
-	ReceiveFromOperator(ctx context.Context, userID uint32, dialogID uint64) <-chan model.Message
-	DeleteSession(userID uint32, dialogID uint64) error
-	GetConnectionErrors(ctx context.Context, userID uint32, dialogID uint64) <-chan string
-	CloseOperatorSSE(ctx context.Context, userID uint32, dialogID uint64) error
+	AskOperator(ctx context.Context, userID uint64, dialogID uint64, question model.Message) (model.Message, error)
+	SendToOperator(ctx context.Context, userID uint64, dialogID uint64, question model.Message) error
+	ReceiveFromOperator(ctx context.Context, userID uint64, dialogID uint64) <-chan model.Message
+	DeleteSession(userID uint64, dialogID uint64) error
+	GetConnectionErrors(ctx context.Context, userID uint64, dialogID uint64) <-chan string
+	CloseOperatorSSE(ctx context.Context, userID uint64, dialogID uint64) error
 }
 
 type ORCClient interface {
-	GetUserMasterKey(ctx context.Context, userId uint32) ([32]byte, error)
+	GetUserMasterKey(ctx context.Context, userId uint64) ([32]byte, error)
 }
 
 // RespondentData хранит данные о респонденте для идемпотентности
@@ -53,7 +53,7 @@ type Client struct {
 	clientID          string
 	clientSecret      string
 	redirectUrlPrefix string // Персональный URL префикс пользователя
-	userID            uint32 // ID пользователя-владельца
+	userID uint64 // ID пользователя-владельца
 	db                DB
 	mod               Model
 	end               Endpoint
@@ -85,5 +85,5 @@ type User struct {
 	operatorModeByDialog sync.Map // key: dialogId (uint64), value: bool
 	pendingOAuthSettings sync.Map // key: userId (uint32), value: *domainavito.PendingOAuthSettings - временное хранилище настроек до завершения OAuth
 	// Для однократной отправки уведомления о необходимости авториоваться в Landing для получения userKey
-	needReauthorization map[uint32]time.Time
+	needReauthorization map[uint64]time.Time
 }

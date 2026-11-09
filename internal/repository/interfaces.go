@@ -5,16 +5,16 @@ import (
 	"context"
 	"time"
 
-	"github.com/ikermy/air-common/pkg/comdb"
+	"github.com/ikermy/air-common/v2/pkg/comdb"
 )
 
 // Interior описывает внутренние методы доступа к данным приложения.
 type Interior interface {
-	GetAvitoToken(ctx context.Context, userID uint32, mk [32]byte) (*domain.Token, error)
-	SaveAvitoToken(ctx context.Context, userID uint32, mk [32]byte, token domain.Token) error
-	UpdateAvitoToken(ctx context.Context, userID uint32, mk [32]byte, accessToken string, expiry time.Time) error
+	GetAvitoToken(ctx context.Context, userID uint64, mk [32]byte) (*domain.Token, error)
+	SaveAvitoToken(ctx context.Context, userID uint64, mk [32]byte, token domain.Token) error
+	UpdateAvitoToken(ctx context.Context, userID uint64, mk [32]byte, accessToken string, expiry time.Time) error
 	GetAvitoUsers(ctx context.Context) ([]domain.UserDetails, error)
-	GetAvitoUser(ctx context.Context, userID uint32) (*domain.UserDetails, error)
+	GetAvitoUser(ctx context.Context, userID uint64) (*domain.UserDetails, error)
 }
 
 // Exterior описывает общие внешние DB-методы.

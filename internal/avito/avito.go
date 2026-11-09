@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ikermy/air-common/pkg/comdom"
-	"github.com/ikermy/air-common/pkg/model"
+	"github.com/ikermy/air-common/v2/pkg/comdom"
+	"github.com/ikermy/air-common/v2/pkg/model"
 	"github.com/ikermy/air-logger/v2/pkg/logger"
 	"github.com/redis/go-redis/v9"
 )
@@ -33,12 +33,12 @@ func New(parent context.Context, d DB, m Model, e Endpoint, c CRM, o ORCClient, 
 		crm:                 c,
 		rpc:                 o,
 		redisCache:          newRedisFirstInteractionCache(redisClient),
-		needReauthorization: make(map[uint32]time.Time),
+		needReauthorization: make(map[uint64]time.Time),
 	}
 }
 
 // NewClient создает нового клиента Avito для пользователя
-func NewClient(u *User, userId uint32, assist *model.Assistant) *Client {
+func NewClient(u *User, userId uint64, assist *model.Assistant) *Client {
 	ctx, cancel := context.WithCancel(u.ctx)
 
 	// Инициализируем CRM для этого пользователя
@@ -825,7 +825,7 @@ func (u *User) IsOperatorMode(dialogId uint64) bool {
 }
 
 // DisableOperatorMode отключает режим оператора и уведомляет AI-модель
-func (u *User) DisableOperatorMode(userId uint32, dialogId uint64, silent ...bool) error {
+func (u *User) DisableOperatorMode(userId uint64, dialogId uint64, silent ...bool) error {
 	// Определяем значение silent (по умолчанию false)
 	isSilent := false
 	if len(silent) > 0 {
@@ -961,7 +961,7 @@ func (u *User) StartClients() error {
 	}
 
 	for _, user := range users {
-		userId := uint32(user.UserID)
+		userId := uint64(user.UserID)
 
 		// Создаем модель ассистента
 		assist := &model.Assistant{
@@ -996,7 +996,7 @@ func (u *User) StartClients() error {
 }
 
 // StartUserClient запускает Avito клиента для конкретного пользователя
-func (u *User) StartUserClient(userId uint32) error {
+func (u *User) StartUserClient(userId uint64) error {
 	// Проверяем, не запущен ли уже клиент
 	if _, exists := u.clients.Load(userId); exists {
 		logger.Warn("Avito клиент уже запущен для пользователя", userId)
@@ -1052,7 +1052,7 @@ func (u *User) StartUserClient(userId uint32) error {
 }
 
 // StopUserClient останавливает Avito клиента для конкретного пользователя
-func (u *User) StopUserClient(userId uint32) error {
+func (u *User) StopUserClient(userId uint64) error {
 	// Проверяем существование клиента
 	clientInterface, exists := u.clients.Load(userId)
 	if !exists {

@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v3"
-	"github.com/ikermy/air-common/pkg/mode"
-	"github.com/ikermy/air-common/pkg/model"
+	"github.com/ikermy/air-common/v2/pkg/mode"
+	"github.com/ikermy/air-common/v2/pkg/model"
 	"github.com/ikermy/air-logger/v2/pkg/logger"
 )
 
@@ -18,7 +18,7 @@ import (
 // GET /avito/status?uid={userId}
 func (u *User) StatusHandler(c fiber.Ctx) error {
 	// Получаем userId из контекста (установлен middleware extractUID)
-	userId := c.Locals("userId").(uint32)
+	userId := c.Locals("userId").(uint64)
 
 	// Проверяем наличие токена в БД
 	token, err := u.db.GetAvitoToken(u.ctx, userId, u.userMasterKey(userId))
@@ -51,7 +51,7 @@ func (u *User) StatusHandler(c fiber.Ctx) error {
 //	https://{domain}/open/avito/auth/callback
 func (u *User) AuthURLHandler(c fiber.Ctx) error {
 	// Получаем userId из контекста (установлен middleware extractUID)
-	userId := c.Locals("userId").(uint32)
+	userId := c.Locals("userId").(uint64)
 
 	// Структура для парсинга JSON body
 	type AuthURLRequest struct {
@@ -127,7 +127,7 @@ func (u *User) AuthCallbackHandler(c fiber.Ctx) error {
 		return c.Redirect().To(fmt.Sprintf("%s/auth/avito/error?reason=invalid-state", host))
 	}
 
-	userId := uint32(uid)
+	userId := uint64(uid)
 
 	// Извлекаем персональные настройки из временного хранилища
 	var pendingSettings *domainavito.PendingOAuthSettings
@@ -213,7 +213,7 @@ func (u *User) AvailableHandler(c fiber.Ctx) error {
 // GET /avito/enable?uid={userId}
 func (u *User) EnableHandler(c fiber.Ctx) error {
 	// Получаем userId из контекста (установлен middleware extractUID)
-	userId := c.Locals("userId").(uint32)
+	userId := c.Locals("userId").(uint64)
 
 	// Запускаем клиента
 	err := u.StartUserClient(userId)
@@ -240,7 +240,7 @@ func (u *User) EnableHandler(c fiber.Ctx) error {
 // GET /avito/disable?uid={userId}
 func (u *User) DisableHandler(c fiber.Ctx) error {
 	// Получаем userId из контекста (установлен middleware extractUID)
-	userId := c.Locals("userId").(uint32)
+	userId := c.Locals("userId").(uint64)
 
 	// Останавливаем клиента
 	err := u.StopUserClient(userId)
@@ -264,7 +264,7 @@ func (u *User) DisableHandler(c fiber.Ctx) error {
 // GET /avito/chats?uid={userId}&limit={limit}&offset={offset}&unread_only={bool}
 func (u *User) ChatsHandler(c fiber.Ctx) error {
 	// Получаем userId из контекста (установлен middleware extractUID)
-	userId := c.Locals("userId").(uint32)
+	userId := c.Locals("userId").(uint64)
 
 	// Получаем query параметры (с значениями по умолчанию)
 	limit := 10 // По умолчанию 10 чатов
@@ -324,7 +324,7 @@ func (u *User) ChatsHandler(c fiber.Ctx) error {
 // GET /avito/subscriptions?uid={userId}
 func (u *User) SubscriptionsHandler(c fiber.Ctx) error {
 	// Получаем userId из контекста (установлен middleware extractUID)
-	userId := c.Locals("userId").(uint32)
+	userId := c.Locals("userId").(uint64)
 
 	// Получаем подписки через API
 	subsResp, err := u.GetSubscriptions(userId)
@@ -352,7 +352,7 @@ func (u *User) SubscriptionsHandler(c fiber.Ctx) error {
 // POST /avito/subscribe?uid={userId}
 func (u *User) SubscribeHandler(c fiber.Ctx) error {
 	// Получаем userId из контекста (установлен middleware extractUID)
-	userId := c.Locals("userId").(uint32)
+	userId := c.Locals("userId").(uint64)
 
 	// Подписываемся на webhook'и
 	if err := u.SubscribeToWebhooks(userId, u.db); err != nil {
@@ -385,7 +385,7 @@ func (u *User) SubscribeHandler(c fiber.Ctx) error {
 // POST /avito/unsubscribe?uid={userId}&url={webhookURL}
 func (u *User) UnsubscribeHandler(c fiber.Ctx) error {
 	// Получаем userId из контекста (установлен middleware extractUID)
-	userId := c.Locals("userId").(uint32)
+	userId := c.Locals("userId").(uint64)
 
 	// Получаем URL для отписки
 	webhookURL := c.Query("url")

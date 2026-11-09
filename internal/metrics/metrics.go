@@ -91,58 +91,58 @@ func NormalizeRoute(path string) string {
 	return trimmed
 }
 
-func BotLabel(userID uint32) string {
+func BotLabel(userID uint64) string {
 	return strconv.FormatUint(uint64(userID), 10)
 }
 
-func TrackActiveDialogs(userID uint32, count int) {
+func TrackActiveDialogs(userID uint64, count int) {
 	ActiveDialogs.WithLabelValues(BotLabel(userID)).Set(float64(count))
 }
 
-func TrackOperatorModeDialogs(userID uint32, count int) {
+func TrackOperatorModeDialogs(userID uint64, count int) {
 	OperatorModeDialogs.WithLabelValues(BotLabel(userID)).Set(float64(count))
 }
 
-func IncMessagesReceived(userID uint32, messageType string) {
+func IncMessagesReceived(userID uint64, messageType string) {
 	MessagesReceived.WithLabelValues(BotLabel(userID), messageType).Inc()
 }
 
-func IncMessagesIgnored(userID uint32, reason string) {
+func IncMessagesIgnored(userID uint64, reason string) {
 	MessagesIgnored.WithLabelValues(BotLabel(userID), reason).Inc()
 }
 
-func IncMessagesProcessed(userID uint32, status string) {
+func IncMessagesProcessed(userID uint64, status string) {
 	MessagesProcessed.WithLabelValues(BotLabel(userID), status).Inc()
 }
 
-func ObserveCRMRequest(userID uint32, direction, status string, startedAt time.Time) {
+func ObserveCRMRequest(userID uint64, direction, status string, startedAt time.Time) {
 	botID := BotLabel(userID)
 	CRMRequests.WithLabelValues(botID, direction, status).Inc()
 	CRMRequestDuration.WithLabelValues(botID, direction).Observe(time.Since(startedAt).Seconds())
 }
 
-func ObserveAppSend(userID uint32, status string, startedAt time.Time) {
+func ObserveAppSend(userID uint64, status string, startedAt time.Time) {
 	botID := BotLabel(userID)
 	AppSend.WithLabelValues(botID, status).Inc()
 	AppSendDuration.WithLabelValues(botID).Observe(time.Since(startedAt).Seconds())
 }
 
-func ObserveMessageProcessing(userID uint32, stage string, startedAt time.Time) {
+func ObserveMessageProcessing(userID uint64, stage string, startedAt time.Time) {
 	MessageProcessingDuration.WithLabelValues(BotLabel(userID), stage).Observe(time.Since(startedAt).Seconds())
 }
 
-func ObserveUserChannelInit(userID uint32, status string, startedAt time.Time) {
+func ObserveUserChannelInit(userID uint64, status string, startedAt time.Time) {
 	UserChannelInitDuration.WithLabelValues(BotLabel(userID), status).Observe(time.Since(startedAt).Seconds())
 }
 
-func IncDecryptErrors(userID uint32, category string) {
+func IncDecryptErrors(userID uint64, category string) {
 	DecryptErrors.WithLabelValues(BotLabel(userID), category).Inc()
 }
 
-func IncReconnects(userID uint32, result string) {
+func IncReconnects(userID uint64, result string) {
 	Reconnects.WithLabelValues(BotLabel(userID), result).Inc()
 }
 
-func SetActiveSessions(userID uint32, state string, count float64) {
+func SetActiveSessions(userID uint64, state string, count float64) {
 	ActiveSessions.WithLabelValues(BotLabel(userID), state).Set(count)
 }

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/ikermy/air-common/pkg/comdb"
+	"github.com/ikermy/air-common/v2/pkg/comdb"
 	"github.com/ikermy/air-logger/v2/pkg/logger"
 )
 
@@ -28,15 +28,15 @@ type DB struct {
 	Exit   chan struct{} // Канал завершения работы приложения
 }
 
-func (d *DB) GetAvitoToken(ctx context.Context, userID uint32, mk [32]byte) (*domain.Token, error) {
+func (d *DB) GetAvitoToken(ctx context.Context, userID uint64, mk [32]byte) (*domain.Token, error) {
 	return d.repo.Internal.GetAvitoToken(ctx, userID, mk)
 }
 
-func (d *DB) SaveAvitoToken(ctx context.Context, userID uint32, mk [32]byte, token domain.Token) error {
+func (d *DB) SaveAvitoToken(ctx context.Context, userID uint64, mk [32]byte, token domain.Token) error {
 	return d.repo.Internal.SaveAvitoToken(ctx, userID, mk, token)
 }
 
-func (d *DB) UpdateAvitoToken(ctx context.Context, userID uint32, mk [32]byte, accessToken string, expiry time.Time) error {
+func (d *DB) UpdateAvitoToken(ctx context.Context, userID uint64, mk [32]byte, accessToken string, expiry time.Time) error {
 	return d.repo.Internal.UpdateAvitoToken(ctx, userID, mk, accessToken, expiry)
 }
 
@@ -44,7 +44,7 @@ func (d *DB) GetAvitoUsers(ctx context.Context) ([]domain.UserDetails, error) {
 	return d.repo.Internal.GetAvitoUsers(ctx)
 }
 
-func (d *DB) GetAvitoUser(ctx context.Context, userID uint32) (*domain.UserDetails, error) {
+func (d *DB) GetAvitoUser(ctx context.Context, userID uint64) (*domain.UserDetails, error) {
 	return d.repo.Internal.GetAvitoUser(ctx, userID)
 }
 

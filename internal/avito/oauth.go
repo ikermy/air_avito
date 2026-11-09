@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ikermy/air-common/pkg/mode"
+	"github.com/ikermy/air-common/v2/pkg/mode"
 	"github.com/ikermy/air-logger/v2/pkg/logger"
 )
 
@@ -60,12 +60,12 @@ func normalizeRedirectURL(rawURL string) string {
 
 // tokenRefreshMutexes карта мьютексов для синхронизации обновления токенов по userId
 var (
-	tokenRefreshMutexes = make(map[uint32]*sync.Mutex)
+	tokenRefreshMutexes = make(map[uint64]*sync.Mutex)
 	mutexMapLock        sync.RWMutex
 )
 
 // getOrCreateMutex получает или создает мьютекс для конкретного пользователя
-func getOrCreateMutex(userId uint32) *sync.Mutex {
+func getOrCreateMutex(userId uint64) *sync.Mutex {
 	mutexMapLock.RLock()
 	mu, exists := tokenRefreshMutexes[userId]
 	mutexMapLock.RUnlock()
@@ -252,7 +252,7 @@ func (c *Client) RefreshAccessToken(refreshToken string) (string, time.Time, err
 }
 
 // ExchangeCodeForToken обменивает authorization code на токены
-func (u *User) ExchangeCodeForToken(code string, userId uint32, db DB, settings *domain.PendingOAuthSettings) error {
+func (u *User) ExchangeCodeForToken(code string, userId uint64, db DB, settings *domain.PendingOAuthSettings) error {
 	if settings == nil {
 		return fmt.Errorf("персональные настройки OAuth не переданы")
 	}
@@ -346,7 +346,7 @@ func (u *User) ExchangeCodeForToken(code string, userId uint32, db DB, settings 
 }
 
 // getAvitoUserInfo получает информацию о пользователе Avito через API
-func getAvitoUserInfo(accessToken string, userId uint32) (string, error) {
+func getAvitoUserInfo(accessToken string, userId uint64) (string, error) {
 	req, err := http.NewRequest("GET", "https://api.avito.ru/core/v1/accounts/self", nil)
 	if err != nil {
 		return "", fmt.Errorf("ошибка создания запроса: %w", err)
@@ -391,7 +391,7 @@ func getAvitoUserInfo(accessToken string, userId uint32) (string, error) {
 }
 
 // GenerateAuthURL генерирует URL для авторизации пользователя
-func (u *User) GenerateAuthURL(userId uint32, redirectURI string, clientID string) string {
+func (u *User) GenerateAuthURL(userId uint64, redirectURI string, clientID string) string {
 	params := url.Values{}
 	params.Set("client_id", clientID)
 	params.Set("response_type", "code")
@@ -448,7 +448,7 @@ func (c *Client) SendAPIRequest(method, urlPath string, body interface{}) (*http
 
 // GetChats получает список чатов пользователя через Avito Messenger API
 // GET /messenger/v2/accounts/{user_id}/chats
-func (u *User) GetChats(userId uint32, db DB, limit int, offset int, unreadOnly bool) (*domain.ChatsResponse, error) {
+func (u *User) GetChats(userId uint64, db DB, limit int, offset int, unreadOnly bool) (*domain.ChatsResponse, error) {
 	// Получаем Avito user ID из БД
 	token, err := db.GetAvitoToken(u.ctx, userId, u.userMasterKey(userId))
 	if err != nil {
@@ -508,7 +508,7 @@ func (u *User) GetChats(userId uint32, db DB, limit int, offset int, unreadOnly 
 
 // GetSubscriptions получает список webhook подписок
 // POST /messenger/v1/subscriptions
-func (u *User) GetSubscriptions(userId uint32) (*domain.SubscriptionsResponse, error) {
+func (u *User) GetSubscriptions(userId uint64) (*domain.SubscriptionsResponse, error) {
 	apiURL := fmt.Sprintf("%s/subscriptions", domain.AvitoMessengerV1)
 
 	client, err := u.GetClientByUserID(userId)
@@ -544,7 +544,7 @@ func (u *User) GetSubscriptions(userId uint32) (*domain.SubscriptionsResponse, e
 	return &subsResp, nil
 }
 
-func (u *User) GetClientByUserID(userId uint32) (*Client, error) {
+func (u *User) GetClientByUserID(userId uint64) (*Client, error) {
 	// Получаю клиента по userId для логирования внутри SendAPIRequest
 	clientInterface, ok := u.clients.Load(userId)
 	if !ok {
@@ -562,7 +562,7 @@ func (u *User) GetClientByUserID(userId uint32) (*Client, error) {
 
 // SubscribeToWebhooks подписывается на webhook'и Avito Messenger
 // POST /messenger/v3/webhook
-func (u *User) SubscribeToWebhooks(userId uint32, db DB) error {
+func (u *User) SubscribeToWebhooks(userId uint64, db DB) error {
 	// Получаем токен пользователя для извлечения персонального URL
 	token, err := db.GetAvitoToken(u.ctx, userId, u.userMasterKey(userId))
 	if err != nil {
@@ -614,7 +614,7 @@ func (u *User) SubscribeToWebhooks(userId uint32, db DB) error {
 
 // UnsubscribeFromWebhooks отписывается от webhook'ов
 // POST /messenger/v1/webhook/unsubscribe (для V3 используется тот же метод или отдельный эндпоинт)
-func (u *User) UnsubscribeFromWebhooks(userId uint32, webhookURL string) error {
+func (u *User) UnsubscribeFromWebhooks(userId uint64, webhookURL string) error {
 	apiURL := fmt.Sprintf("%s/webhook/unsubscribe", domain.AvitoMessengerV1)
 
 	reqBody := domain.UnsubscribeRequest{

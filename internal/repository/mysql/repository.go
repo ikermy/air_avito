@@ -11,11 +11,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ikermy/air-common/pkg/comdb"
-	"github.com/ikermy/air-common/pkg/comdom"
-	"github.com/ikermy/air-common/pkg/crypto"
-	"github.com/ikermy/air-common/pkg/mode"
-	"github.com/ikermy/air-common/pkg/model/create"
+	"github.com/ikermy/air-common/v2/pkg/comdb"
+	"github.com/ikermy/air-common/v2/pkg/comdom"
+	"github.com/ikermy/air-common/v2/pkg/crypto"
+	"github.com/ikermy/air-common/v2/pkg/mode"
+	"github.com/ikermy/air-common/v2/pkg/model/create"
 	"github.com/ikermy/air-logger/v2/pkg/logger"
 )
 
@@ -102,7 +102,7 @@ func decryptSessionData(mk [32]byte, raw string) (string, error) {
 	return decrypted, nil
 }
 
-func (r *Implementation) GetAvitoToken(ctx context.Context, userID uint32, mk [32]byte) (*domain.Token, error) {
+func (r *Implementation) GetAvitoToken(ctx context.Context, userID uint64, mk [32]byte) (*domain.Token, error) {
 	ctx, cancel := context.WithTimeout(ctx, mode.GetSQLTimeToCancel())
 	defer cancel()
 
@@ -141,7 +141,7 @@ func (r *Implementation) GetAvitoToken(ctx context.Context, userID uint32, mk [3
 	return &token, nil
 }
 
-func (r *Implementation) SaveAvitoToken(ctx context.Context, userID uint32, mk [32]byte, token domain.Token) error {
+func (r *Implementation) SaveAvitoToken(ctx context.Context, userID uint64, mk [32]byte, token domain.Token) error {
 	ctx, cancel := context.WithTimeout(ctx, mode.GetSQLTimeToCancel())
 	defer cancel()
 
@@ -161,23 +161,17 @@ func (r *Implementation) SaveAvitoToken(ctx context.Context, userID uint32, mk [
 		tokenJSON = []byte(encrypted)
 	}
 
-	query := `UPDATE channels SET Avito = ?, Avito_enabled = 1 WHERE UserId = ?`
-	result, err := r.db.Conn().ExecContext(ctx, query, string(tokenJSON), userID)
-	if err != nil {
+	// Dual-write: legacy channels + user_channels/user_channel_configs.
+	if err := r.db.SaveChannelDataRaw(userID, "avito", string(tokenJSON), true); err != nil {
 		logger.Error("Ошибка сохранения Avito токена в БД: %v", err, userID)
 		return err
-	}
-
-	rowsAffected, _ := result.RowsAffected()
-	if rowsAffected == 0 {
-		return fmt.Errorf("пользователь %d не найден в channels", userID)
 	}
 
 	logger.Info("Avito токен успешно сохранен", userID)
 	return nil
 }
 
-func (r *Implementation) UpdateAvitoToken(ctx context.Context, userID uint32, mk [32]byte, accessToken string, expiry time.Time) error {
+func (r *Implementation) UpdateAvitoToken(ctx context.Context, userID uint64, mk [32]byte, accessToken string, expiry time.Time) error {
 	ctx, cancel := context.WithTimeout(ctx, mode.GetSQLTimeToCancel())
 	defer cancel()
 
@@ -205,16 +199,20 @@ func (r *Implementation) UpdateAvitoToken(ctx context.Context, userID uint32, mk
 		tokenJSON = []byte(encrypted)
 	}
 
-	query := `UPDATE channels SET Avito = ? WHERE UserId = ?`
-	result, err := r.db.Conn().ExecContext(ctx, query, tokenJSON, userID)
-	if err != nil {
-		logger.Error("Ошибка обновления Avito токена в БД: %v", err, userID)
-		return err
+	var enabled bool
+	if err := r.db.Conn().QueryRowContext(ctx,
+		"SELECT Avito_enabled FROM channels WHERE UserId = ?", userID).Scan(&enabled); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("токен для пользователя %d не найден", userID)
+		}
+		return fmt.Errorf("ошибка чтения состояния Avito канала: %w", err)
 	}
 
-	rowsAffected, _ := result.RowsAffected()
-	if rowsAffected == 0 {
-		return fmt.Errorf("токен для пользователя %d не найден", userID)
+	// Dual-write: legacy channels + user_channels/user_channel_configs.
+	// Флаг enabled сохраняем прежним — обновляется только токен.
+	if err := r.db.SaveChannelDataRaw(userID, "avito", string(tokenJSON), enabled); err != nil {
+		logger.Error("Ошибка обновления Avito токена в БД: %v", err, userID)
+		return err
 	}
 
 	logger.Debug("Avito токен успешно обновлен", userID)
@@ -308,7 +306,7 @@ func (r *Implementation) GetAvitoUsers(ctx context.Context) ([]domain.UserDetail
 	return users, nil
 }
 
-func (r *Implementation) GetAvitoUser(ctx context.Context, userID uint32) (*domain.UserDetails, error) {
+func (r *Implementation) GetAvitoUser(ctx context.Context, userID uint64) (*domain.UserDetails, error) {
 	ctx, cancel := context.WithTimeout(ctx, mode.GetSQLTimeToCancel())
 	defer cancel()
 
